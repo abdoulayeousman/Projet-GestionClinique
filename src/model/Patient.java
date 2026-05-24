@@ -14,25 +14,12 @@ public class Patient {
 
     // ============ ATTRIBUTS ============
 
-    /** L'identifiant unique du patient dans la base de données. */
     private int patientId;
-
-    /** Le nom de famille et le prénom du patient. */
     private String nomComplet;
-
-    /** La date de naissance du patient sous forme d'objet {@link LocalDate}. */
     private LocalDate dateNaissance;
-
-    /** Le sexe du patient (valeurs attendues : "Male", "Female", "Other"). */
     private String sexe;
-
-    /** Le numéro de téléphone de contact du patient. */
     private String telephone;
-
-    /** Le service médical auquel le patient est rattaché (ex: "Cardiologie", "Pédiatrie"). */
     private String service;
-
-    /** Le pays d'origine du patient (représentant l'ENUM Afrique de la base de données). */
     private String pays;
 
     // ============ CONSTRUCTEUR ============
@@ -42,103 +29,89 @@ public class Patient {
      */
     public Patient() {}
 
+    /**
+     * Constructeur complet permettant d'initialiser un patient avec toutes ses données.
+     *
+     * @param patientId Identifiant unique du patient.
+     * @param nomComplet Nom complet du patient.
+     * @param dateNaissance Date de naissance du patient.
+     * @param sexe Sexe du patient.
+     * @param telephone Numéro de téléphone du patient.
+     * @param service Service médical du patient.
+     * @param pays Pays d'origine du patient.
+     */
+    public Patient(int patientId, String nomComplet, LocalDate dateNaissance,
+                   String sexe, String telephone, String service, String pays) {
+        this.patientId = patientId;
+        this.nomComplet = nomComplet;
+        this.dateNaissance = dateNaissance;
+        this.sexe = sexe;
+        this.telephone = telephone;
+        this.service = service;
+        this.pays = pays;
+    }
+
     // ============ GETTERS ET SETTERS ============
 
-    /**
-     * Récupère l'identifiant unique du patient.
-     *
-     * @return L'identifiant du patient (int).
-     */
     public int getPatientId() { return patientId; }
-
-    /**
-     * Modifie l'identifiant unique du patient.
-     *
-     * @param patientId Le nouvel identifiant à attribuer au patient.
-     */
     public void setPatientId(int patientId) { this.patientId = patientId; }
 
-    /**
-     * Récupère le nom complet du patient.
-     *
-     * @return Le nom complet sous forme de chaîne de caractères (String).
-     */
     public String getNomComplet() { return nomComplet; }
-
-    /**
-     * Modifie le nom complet du patient.
-     *
-     * @param nomComplet Le nouveau nom complet du patient.
-     */
     public void setNomComplet(String nomComplet) { this.nomComplet = nomComplet; }
 
-    /**
-     * Récupère la date de naissance du patient.
-     *
-     * @return La date de naissance (LocalDate).
-     */
     public LocalDate getDateNaissance() { return dateNaissance; }
-
-    /**
-     * Modifie la date de naissance du patient.
-     *
-     * @param dateNaissance La nouvelle date de naissance du patient.
-     */
     public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
 
-    /**
-     * Récupère le sexe du patient.
-     *
-     * @return Le sexe du patient (String).
-     */
     public String getSexe() { return sexe; }
-
-    /**
-     * Modifie le sexe du patient.
-     *
-     * @param sexe Le sexe à attribuer ("Male", "Female", "Other").
-     */
     public void setSexe(String sexe) { this.sexe = sexe; }
 
-    /**
-     * Récupère le numéro de téléphone du patient.
-     *
-     * @return Le numéro de téléphone (String).
-     */
     public String getTelephone() { return telephone; }
-
-    /**
-     * Modifie le numéro de téléphone du patient.
-     *
-     * @param telephone Le nouveau numéro de téléphone du patient.
-     */
     public void setTelephone(String telephone) { this.telephone = telephone; }
 
-    /**
-     * Récupère le service médical associé au patient.
-     *
-     * @return Le nom du service médical (String).
-     */
     public String getService() { return service; }
-
-    /**
-     * Modifie le service médical associé au patient.
-     *
-     * @param service Le nouveau service médical à affecter.
-     */
     public void setService(String service) { this.service = service; }
 
-    /**
-     * Récupère le pays d'origine du patient.
-     *
-     * @return Le pays du patient (String).
-     */
     public String getPays() { return pays; }
+    public void setPays(String pays) { this.pays = pays; }
+
+    // ============ MÉTHODES UTILES ============
 
     /**
-     * Modifie le pays d'origine du patient.
-     *
-     * @param pays Le nouveau pays d'origine du patient.
+     * ✅ Valide les données critiques du patient.
+     * @return true si les données sont valides.
      */
-    public void setPays(String pays) { this.pays = pays; }
+    public boolean estValide() {
+        return patientId > 0 &&
+                nomComplet != null && !nomComplet.trim().isEmpty() &&
+                dateNaissance != null &&
+                sexe != null && !sexe.trim().isEmpty() &&
+                (sexe.equalsIgnoreCase("Male") ||
+                        sexe.equalsIgnoreCase("Female") ||
+                        sexe.equalsIgnoreCase("Other"));
+    }
+
+    /**
+     * ✅ Calcule l'âge actuel du patient.
+     * @return L'âge en années, ou -1 si la date de naissance est null.
+     */
+    public int calculerAge() {
+        if (dateNaissance == null) return -1;
+        return LocalDate.now().getYear() - dateNaissance.getYear();
+    }
+
+    /**
+     * ✅ Retourne une représentation textuelle du patient.
+     */
+    @Override
+    public String toString() {
+        return "Patient{" +
+                "id=" + patientId +
+                ", nom='" + nomComplet + '\'' +
+                ", dateNaissance=" + dateNaissance +
+                ", sexe='" + sexe + '\'' +
+                ", telephone='" + telephone + '\'' +
+                ", service='" + service + '\'' +
+                ", pays='" + pays + '\'' +
+                '}';
+    }
 }

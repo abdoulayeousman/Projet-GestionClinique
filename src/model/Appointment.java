@@ -114,183 +114,77 @@ public class Appointment {
 
     // ============ GETTERS ET SETTERS ============
 
-    /**
-     * Récupère l'identifiant unique du rendez-vous.
-     * @return L'identifiant du rendez-vous.
-     */
     public int getAppointmentId() { return appointmentId; }
-
-    /**
-     * Définit l'identifiant unique du rendez-vous.
-     * @param appointmentId Le nouvel identifiant du rendez-vous.
-     */
     public void setAppointmentId(int appointmentId) { this.appointmentId = appointmentId; }
 
-    /**
-     * Récupère l'identifiant du patient concerné.
-     * @return L'identifiant du patient.
-     */
     public int getPatientId() { return patientId; }
-
-    /**
-     * Assigne un patient au rendez-vous via son identifiant.
-     * @param patientId L'identifiant du patient.
-     */
     public void setPatientId(int patientId) { this.patientId = patientId; }
 
-    /**
-     * Récupère l'identifiant du médecin assigné.
-     * @return L'identifiant du médecin.
-     */
     public int getDoctorId() { return doctorId; }
-
-    /**
-     * Assigne un médecin au rendez-vous via son identifiant.
-     * @param doctorId L'identifiant du médecin.
-     */
     public void setDoctorId(int doctorId) { this.doctorId = doctorId; }
 
-    /**
-     * Récupère la date fixée pour la consultation.
-     * @return La date du rendez-vous (LocalDate).
-     */
     public LocalDate getAppointmentDate() { return appointmentDate; }
-
-    /**
-     * Modifie la date de la consultation.
-     * @param appointmentDate La nouvelle date du rendez-vous.
-     */
     public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
 
-    /**
-     * Récupère l'heure planifiée pour la consultation.
-     * @return L'heure du rendez-vous (LocalTime).
-     */
     public LocalTime getAppointmentTime() { return appointmentTime; }
-
-    /**
-     * Modifie l'heure de la consultation.
-     * @param appointmentTime La nouvelle heure du rendez-vous.
-     */
     public void setAppointmentTime(LocalTime appointmentTime) { this.appointmentTime = appointmentTime; }
 
-    /**
-     * Récupère le statut opérationnel du rendez-vous.
-     * @return Le statut du rendez-vous.
-     */
     public String getStatus() { return status; }
-
-    /**
-     * Modifie le statut opérationnel du rendez-vous.
-     * @param status Le nouveau statut (ex: "Completed", "Cancelled").
-     */
     public void setStatus(String status) { this.status = status; }
 
-    /**
-     * Récupère la typologie ou nature de la consultation.
-     * @return Le type de consultation.
-     */
     public String getTypeConsultation() { return typeConsultation; }
-
-    /**
-     * Définit la typologie ou nature de la consultation.
-     * @param typeConsultation Le nouveau type (ex: "Suivi", "Urgence").
-     */
     public void setTypeConsultation(String typeConsultation) { this.typeConsultation = typeConsultation; }
 
-    /**
-     * Récupère le motif médical de la visite.
-     * @return La raison de la consultation.
-     */
     public String getReasonForVisit() { return reasonForVisit; }
-
-    /**
-     * Enregistre le motif médical de la visite.
-     * @param reasonForVisit La raison invoquée pour la consultation.
-     */
     public void setReasonForVisit(String reasonForVisit) { this.reasonForVisit = reasonForVisit; }
 
-    /**
-     * Récupère les annotations cliniques prises par le médecin.
-     * @return Le texte des notes médicales.
-     */
     public String getNotesMedicales() { return notesMedicales; }
-
-    /**
-     * Permet au médecin d'ajouter ou modifier des annotations cliniques.
-     * @param notesMedicales Les comptes-rendus ou observations.
-     */
     public void setNotesMedicales(String notesMedicales) { this.notesMedicales = notesMedicales; }
 
-    /**
-     * Récupère la tarification appliquée à l'acte médical.
-     * @return Le prix en FCFA.
-     */
     public double getPrixConsultation() { return prixConsultation; }
-
-    /**
-     * Ajuste la tarification de l'acte médical.
-     * @param prixConsultation Le montant de l'acte en FCFA.
-     */
     public void setPrixConsultation(double prixConsultation) { this.prixConsultation = prixConsultation; }
 
-    /**
-     * Récupère le mode de règlement de la facture.
-     * @return Le mode de paiement.
-     */
     public String getModePaiement() { return modePaiement; }
-
-    /**
-     * Définit le mode de règlement utilisé pour la facture.
-     * @param modePaiement Le mode de paiement sélectionné (ex: "T-Money").
-     */
     public void setModePaiement(String modePaiement) { this.modePaiement = modePaiement; }
 
-    /**
-     * Récupère le statut financier du paiement.
-     * @return L'état du paiement.
-     */
     public String getStatutPaiement() { return statutPaiement; }
-
-    /**
-     * Modifie l'état financier du paiement.
-     * @param statutPaiement Le nouvel état (ex: "Paye", "En attente").
-     */
     public void setStatutPaiement(String statutPaiement) { this.statutPaiement = statutPaiement; }
 
-    /**
-     * Récupère la référence alphanumérique du reçu d'encaissement.
-     * @return Le numéro du reçu de caisse.
-     */
     public String getNumeroRecu() { return numeroRecu; }
-
-    /**
-     * Assigne un numéro de pièce comptable justificatif au rendez-vous.
-     * @param numeroRecu La chaîne de caractères du reçu.
-     */
     public void setNumeroRecu(String numeroRecu) { this.numeroRecu = numeroRecu; }
 
-    /**
-     * Récupère l'état de transmission de la notification associée.
-     * @return Le statut de la notification.
-     */
     public String getStatutNotification() { return statutNotification; }
-
-    /**
-     * Modifie l'état de transmission de la notification associée.
-     * @param statutNotification Le nouveau statut d'envoi.
-     */
     public void setStatutNotification(String statutNotification) { this.statutNotification = statutNotification; }
 
-    /**
-     * Récupère la date et l'heure exactes de l'enregistrement système.
-     * @return L'horodatage de création (LocalDateTime).
-     */
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    // ============ MÉTHODES UTILES ============
 
     /**
-     * Fixe le moment d'enregistrement initial du rendez-vous dans le système.
-     * @param createdAt Le timestamp de création.
+     * ✅ Valide les données critiques du rendez-vous.
+     * @return true si les données sont valides.
      */
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public boolean estValide() {
+        return appointmentId > 0 && patientId > 0 && doctorId > 0 &&
+                appointmentDate != null && appointmentTime != null &&
+                status != null && !status.trim().isEmpty() &&
+                prixConsultation >= 0;
+    }
+
+    /**
+     * ✅ Retourne une représentation textuelle du rendez-vous.
+     */
+    @Override
+    public String toString() {
+        return "Appointment{" +
+                "id=" + appointmentId +
+                ", patient=" + patientId +
+                ", doctor=" + doctorId +
+                ", date=" + appointmentDate +
+                ", time=" + appointmentTime +
+                ", status='" + status + '\'' +
+                ", prix=" + prixConsultation +
+                '}';
+    }
 }

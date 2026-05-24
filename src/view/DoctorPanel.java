@@ -13,7 +13,7 @@ import java.util.List;
  * Permet l'affichage, la recherche, l'ajout, la modification et la suppression
  * des profils des professionnels de santé.
  * * @author Abdoulaye Ousmane
- * @version 1.4
+ * @version 1.5
  */
 public class DoctorPanel extends JPanel {
 
@@ -30,21 +30,13 @@ public class DoctorPanel extends JPanel {
     private DashboardFrame dashboard;
     private final DoctorDAO doctorDAO;
 
-    /**
-     * Initialise le panneau de gestion des médecins.
-     * * @param dashboard La fenêtre parente permettant de naviguer dans l'application.
-     */
     public DoctorPanel(DashboardFrame dashboard) {
         this.dashboard = dashboard;
-        this.doctorDAO = new DoctorDAO();  // ✅ Instance unique
+        this.doctorDAO = new DoctorDAO();
         initialiserComposants();
         rechercherMedecin();
     }
 
-    /**
-     * Instancie, configure et assemble graphiquement tous les composants.
-     * Utilise {@link BorderLayout} pour structurer le panneau.
-     */
     private void initialiserComposants() {
         setLayout(new BorderLayout(10, 10));
         setBackground(FOND_PANEL);
@@ -54,9 +46,15 @@ public class DoctorPanel extends JPanel {
         panelTop.setBackground(FOND_PANEL);
 
         txtRecherche = new JTextField(20);
+
+        // Configuration du bouton Rechercher en bleu
         JButton btnRechercher = new JButton("Rechercher");
         btnRechercher.setBackground(BLEU_ACTION);
         btnRechercher.setForeground(Color.WHITE);
+        btnRechercher.setFocusPainted(false);
+        btnRechercher.setBorderPainted(false);
+        btnRechercher.setOpaque(true);
+
         btnRechercher.addActionListener(e -> rechercherMedecin());
 
         panelTop.add(new JLabel("Nom du médecin :"));
@@ -95,12 +93,6 @@ public class DoctorPanel extends JPanel {
         add(panelActions, BorderLayout.SOUTH);
     }
 
-    /**
-     * Méthode utilitaire pour créer des boutons uniformes.
-     * * @param texte   Le libellé affiché sur le bouton.
-     * @param couleur La couleur de fond du bouton.
-     * @return Le bouton configuré.
-     */
     private JButton creerBouton(String texte, Color couleur) {
         JButton btn = new JButton(texte);
         btn.setBackground(couleur);
@@ -111,18 +103,13 @@ public class DoctorPanel extends JPanel {
         return btn;
     }
 
-    /**
-     * Filtre et actualise dynamiquement les lignes du tableau via le {@link DoctorDAO}.
-     * ✅ Utilise l'instance unique doctorDAO
-     */
     public void rechercherMedecin() {
         String recherche = txtRecherche.getText().trim();
-        // ✅ CORRECTION : Utilise doctorDAO une seule fois
         List<Doctor> liste = recherche.isEmpty() ? doctorDAO.tousLesMedecins() : doctorDAO.rechercherParNom(recherche);
 
         tableModel.setRowCount(0);
         for (Doctor d : liste) {
-            if (d != null) {  // ✅ Sécurité
+            if (d != null) {
                 tableModel.addRow(new Object[]{
                         d.getDoctorId(), d.getFullName(), d.getPhoneNumber(),
                         d.getSpecialization(), d.getGrade(), d.getService(), d.getStatut()
@@ -131,9 +118,6 @@ public class DoctorPanel extends JPanel {
         }
     }
 
-    /**
-     * Ouvre le formulaire de modification avec les données du médecin sélectionné.
-     */
     private void ouvrirFormulaireModification() {
         int ligne = table.getSelectedRow();
         if (ligne == -1) {
@@ -142,7 +126,6 @@ public class DoctorPanel extends JPanel {
         }
 
         int id = (int) tableModel.getValueAt(ligne, 0);
-        // ✅ CORRECTION : Utilise doctorDAO une seule fois
         Doctor d = doctorDAO.trouverParId(id);
 
         if (d != null) {
@@ -152,9 +135,6 @@ public class DoctorPanel extends JPanel {
         }
     }
 
-    /**
-     * Supprime le médecin sélectionné après confirmation utilisateur.
-     */
     private void supprimerMedecin() {
         int ligne = table.getSelectedRow();
         if (ligne == -1) {
@@ -166,9 +146,8 @@ public class DoctorPanel extends JPanel {
         int choix = JOptionPane.showConfirmDialog(this, "Confirmez-vous la suppression du médecin ID : " + id + " ?", "Confirmation", JOptionPane.YES_NO_OPTION);
 
         if (choix == JOptionPane.YES_OPTION) {
-            // ✅ CORRECTION : Utilise doctorDAO une seule fois + supprime juste la ligne
             if (doctorDAO.supprimer(id)) {
-                tableModel.removeRow(ligne);  // ✅ Amélioration : supprime juste la ligne
+                tableModel.removeRow(ligne);
                 JOptionPane.showMessageDialog(this, "Profil supprimé avec succès.");
             } else {
                 JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.", "Erreur", JOptionPane.ERROR_MESSAGE);

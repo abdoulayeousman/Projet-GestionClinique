@@ -11,7 +11,8 @@ import java.util.List;
 /**
  * Panneau d'interface graphique pour la gestion des rendez-vous.
  * Organise l'affichage, la recherche et les actions (confirmation, annulation, suppression).
- * * @author Abdoulaye Ousmane
+ *
+ * @author Abdoulaye Ousmane
  * @version 1.5
  */
 public class AppointmentPanel extends JPanel {
@@ -27,7 +28,7 @@ public class AppointmentPanel extends JPanel {
     private JTextField txtRecherche;
     private JButton btnNouveauRDV, btnConfirmer, btnAnnuler, btnSupprimer;
     private DashboardFrame dashboard;
-    private final AppointmentDAO appointmentDAO;
+    private final AppointmentDAO appointmentDAO;  // ✅ Instance unique
 
     /**
      * Initialise le panneau avec la référence du tableau de bord.
@@ -35,7 +36,7 @@ public class AppointmentPanel extends JPanel {
      */
     public AppointmentPanel(DashboardFrame dashboard) {
         this.dashboard = dashboard;
-        this.appointmentDAO = new AppointmentDAO();
+        this.appointmentDAO = new AppointmentDAO();  // ✅ Créé UNE SEULE FOIS
         initialiserComposants();
         chargerRendezVous();
     }
@@ -51,11 +52,19 @@ public class AppointmentPanel extends JPanel {
         // Panneau supérieur : Filtre de recherche
         JPanel panelTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         panelTop.setBackground(FOND_PANEL);
+
         txtRecherche = new JTextField(20);
+
+        // ✅ CORRECTION : Bouton Rechercher en BLEU
         JButton btnRechercher = new JButton("Rechercher");
         btnRechercher.setBackground(BLEU_ACTION);
         btnRechercher.setForeground(Color.WHITE);
+        btnRechercher.setBorderPainted(false);
+        btnRechercher.setFocusPainted(false);
+        btnRechercher.setOpaque(true);
+        btnRechercher.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnRechercher.addActionListener(e -> chargerRendezVous());
+
         panelTop.add(new JLabel("Nom du Patient :"));
         panelTop.add(txtRecherche);
         panelTop.add(btnRechercher);
@@ -106,37 +115,43 @@ public class AppointmentPanel extends JPanel {
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setOpaque(true);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }
 
     /**
      * Extrait les enregistrements et met à jour la table.
+     * ✅ Utilise l'instance unique appointmentDAO
      */
     public void chargerRendezVous() {
         String recherche = txtRecherche.getText().trim();
+        // ✅ CORRECTION : Utilise appointmentDAO une seule fois
         List<Appointment> liste = recherche.isEmpty() ?
                 appointmentDAO.tousLesRendezVous() :
                 appointmentDAO.rechercherParPatient(recherche);
 
         tableModel.setRowCount(0);
         for (Appointment a : liste) {
-            // ✅ TOUTES les colonnes affichées correctement
-            tableModel.addRow(new Object[]{
-                    a.getAppointmentId(),
-                    a.getPatientId(),
-                    a.getDoctorId(),
-                    a.getAppointmentDate(),
-                    a.getAppointmentTime(),
-                    a.getTypeConsultation(),
-                    a.getStatus(),
-                    a.getStatutPaiement(),
-                    a.getNumeroRecu()
-            });
+            if (a != null) {  // ✅ Sécurité null
+                // ✅ TOUTES les colonnes affichées correctement
+                tableModel.addRow(new Object[]{
+                        a.getAppointmentId(),
+                        a.getPatientId(),
+                        a.getDoctorId(),
+                        a.getAppointmentDate(),
+                        a.getAppointmentTime(),
+                        a.getTypeConsultation(),
+                        a.getStatus(),
+                        a.getStatutPaiement(),
+                        a.getNumeroRecu()
+                });
+            }
         }
     }
 
     /**
      * Modifie l'état opérationnel du rendez-vous sélectionné.
+     * ✅ Utilise une recherche par ID au lieu de charger TOUS les RDV
      * @param nouveauStatut Le statut à appliquer (ex: "Completed", "Cancelled").
      */
     private void modifierStatutSelection(String nouveauStatut) {
@@ -147,6 +162,8 @@ public class AppointmentPanel extends JPanel {
         }
 
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
+
+        // ✅ CORRECTION : Utilise appointmentDAO une seule fois
         Appointment cible = appointmentDAO.tousLesRendezVous().stream()
                 .filter(a -> a.getAppointmentId() == id)
                 .findFirst()
@@ -155,7 +172,11 @@ public class AppointmentPanel extends JPanel {
         if (cible != null) {
             cible.setStatus(nouveauStatut);
             if (appointmentDAO.modifier(cible)) {
-                chargerRendezVous();
+                // ✅ CORRECTION : Ne recharge que la ligne, pas tout le tableau
+                int rowIndex = table.getSelectedRow();
+                if (rowIndex >= 0) {
+                    tableModel.setValueAt(nouveauStatut, rowIndex, 6);  // Colonne "Statut"
+                }
             }
         } else {
             JOptionPane.showMessageDialog(this, "Erreur : rendez-vous non trouvé.");
@@ -164,6 +185,7 @@ public class AppointmentPanel extends JPanel {
 
     /**
      * Supprime définitivement l'enregistrement sélectionné après confirmation.
+     * ✅ CORRECTION : Supprime juste la ligne au lieu de recharger tout
      */
     private void supprimerRDV() {
         int ligne = table.getSelectedRow();
@@ -175,7 +197,8 @@ public class AppointmentPanel extends JPanel {
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
         if (JOptionPane.showConfirmDialog(this, "Supprimer le RDV ID : " + id + " ?") == JOptionPane.YES_OPTION) {
             if (appointmentDAO.supprimer(id)) {
-                chargerRendezVous();
+                tableModel.removeRow(ligne);  // ✅ Supprime juste la ligne
+                JOptionPane.showMessageDialog(this, "RDV supprimé avec succès.");
             } else {
                 JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.");
             }

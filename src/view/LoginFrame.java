@@ -31,6 +31,9 @@ public class LoginFrame extends JFrame {
     /** Étiquette textuelle dynamique dédiée à l'affichage des alertes ou des confirmations. */
     private JLabel lblMessage;
 
+    /** Compteur de tentatives échouées */
+    private int tentativesEchouees = 0;
+
     // ============ CONSTRUCTEUR ============
 
     /**
@@ -50,10 +53,12 @@ public class LoginFrame extends JFrame {
         try {
             String iconPath = System.getProperty("user.dir") + "/resources/icon.png";
             ImageIcon icon = new ImageIcon(iconPath);
-            setIconImage(icon.getImage());
-            System.out.println("Icône chargée depuis : " + iconPath);
+            if (icon.getIconWidth() > 0) {  // ✅ Vérifier que l'icône est chargée
+                setIconImage(icon.getImage());
+                System.out.println("[LoginFrame] Icône chargée depuis : " + iconPath);
+            }
         } catch (Exception e) {
-            System.out.println("Erreur icône : " + e.getMessage());
+            System.err.println("[LoginFrame] Erreur icône : " + e.getMessage());
         }
 
         // Construction de l'interface
@@ -86,7 +91,7 @@ public class LoginFrame extends JFrame {
         panel.add(lblTitre, gbc);
 
         // Sous-titre
-        JLabel lblSousTitre = new JLabel("Espace Secrétaire");
+        JLabel lblSousTitre = new JLabel("Authentification");
         lblSousTitre.setFont(new Font("Arial", Font.ITALIC, 12));
         lblSousTitre.setForeground(Color.GRAY);
         gbc.gridy = 1;
@@ -100,6 +105,7 @@ public class LoginFrame extends JFrame {
 
         // Champ Username
         txtUsername = new JTextField(15);
+        txtUsername.setToolTipText("Entrez votre identifiant");
         gbc.gridx = 1; gbc.gridy = 2;
         gbc.anchor = GridBagConstraints.WEST;
         panel.add(txtUsername, gbc);
@@ -111,6 +117,7 @@ public class LoginFrame extends JFrame {
 
         // Champ Password
         txtPassword = new JPasswordField(15);
+        txtPassword.setToolTipText("Entrez votre mot de passe");
         gbc.gridx = 1; gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.WEST;
         panel.add(txtPassword, gbc);
@@ -160,19 +167,29 @@ public class LoginFrame extends JFrame {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
 
-        // Vérification champs vides
+        // ✅ Vérification champs vides
         if (username.isEmpty() || password.isEmpty()) {
+            lblMessage.setForeground(Color.RED);
             lblMessage.setText("Veuillez remplir tous les champs !");
             return;
         }
 
-        // Vérification en base de données
+        // ✅ Protection brute force : blocage après 5 tentatives
+        if (tentativesEchouees >= 5) {
+            lblMessage.setForeground(new Color(200, 0, 0));
+            lblMessage.setText("Trop de tentatives ! Réessayez plus tard.");
+            btnLogin.setEnabled(false);
+            return;
+        }
+
+        // ✅ Vérification en base de données
         UserDAO userDAO = new UserDAO();
         User user = userDAO.login(username, password);
 
         if (user != null) {
             lblMessage.setForeground(new Color(0, 153, 0));
             lblMessage.setText("Connexion réussie !");
+            tentativesEchouees = 0;  // ✅ Réinitialiser compteur
 
             // Fermer la fenêtre de login
             dispose();
@@ -181,9 +198,11 @@ public class LoginFrame extends JFrame {
             new DashboardFrame(user).setVisible(true);
 
         } else {
+            tentativesEchouees++;  // ✅ Incrémenter compteur
             lblMessage.setForeground(Color.RED);
-            lblMessage.setText("Login ou mot de passe incorrect !");
+            lblMessage.setText("Login ou mot de passe incorrect ! (" + tentativesEchouees + "/5)");
             txtPassword.setText("");
+            txtPassword.requestFocus();  // ✅ Redonner focus au champ password
         }
     }
 }

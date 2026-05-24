@@ -16,10 +16,11 @@ public class User {
 
     private int userId;
     private String username;
-    private String passwordHash; // Inchangé, comme demandé
+    private String passwordHash;
     private String email;
     private String role;
     private String statut;
+    private LocalDateTime lastLogin;  // ✅ Nouveau : pour audit trail
     private LocalDateTime createdAt;
 
     // ============ CONSTRUCTEURS ============
@@ -34,13 +35,14 @@ public class User {
      */
     public User(int userId, String username, String passwordHash,
                 String email, String role, String statut,
-                LocalDateTime createdAt) {
+                LocalDateTime lastLogin, LocalDateTime createdAt) {
         this.userId = userId;
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
         this.role = role;
         this.statut = statut;
+        this.lastLogin = lastLogin;
         this.createdAt = createdAt;
     }
 
@@ -64,11 +66,47 @@ public class User {
     public String getStatut() { return statut; }
     public void setStatut(String statut) { this.statut = statut; }
 
+    public LocalDateTime getLastLogin() { return lastLogin; }
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     // ============ MÉTHODES UTILES ============
 
+    /**
+     * ✅ Valide les données critiques de l'utilisateur.
+     * @return true si les données sont valides.
+     */
+    public boolean estValide() {
+        return userId > 0 &&
+                username != null && !username.trim().isEmpty() &&
+                passwordHash != null && !passwordHash.trim().isEmpty() &&
+                email != null && !email.trim().isEmpty() &&
+                role != null && !role.trim().isEmpty() &&
+                statut != null && !statut.trim().isEmpty();
+    }
+
+    /**
+     * ✅ Vérifie si l'utilisateur a un rôle spécifique.
+     * @param roleToCheck Le rôle à vérifier.
+     * @return true si l'utilisateur a ce rôle.
+     */
+    public boolean aRoleOf(String roleToCheck) {
+        return role != null && role.equalsIgnoreCase(roleToCheck);
+    }
+
+    /**
+     * ✅ Vérifie si l'utilisateur est actif.
+     * @return true si le statut est "Actif".
+     */
+    public boolean estActif() {
+        return statut != null && "Actif".equalsIgnoreCase(statut);
+    }
+
+    /**
+     * ✅ Retourne une représentation textuelle de l'utilisateur.
+     */
     @Override
     public String toString() {
         return "User{" +
@@ -77,7 +115,8 @@ public class User {
                 ", email='" + email + '\'' +
                 ", role='" + role + '\'' +
                 ", statut='" + statut + '\'' +
-                ", crééLe=" + createdAt +
+                ", lastLogin=" + lastLogin +
+                ", createdAt=" + createdAt +
                 '}';
     }
 }

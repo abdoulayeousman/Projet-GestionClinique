@@ -23,9 +23,13 @@ public class DashboardFrame extends JFrame {
 
     /**
      * Construit le tableau de bord pour l'utilisateur authentifié.
-     * * @param user L'instance de l'utilisateur connecté contenant son rôle et son nom.
+     * @param user L'instance de l'utilisateur connecté contenant son rôle et son nom.
      */
     public DashboardFrame(User user) {
+        if (user == null) {  // ✅ Sécurité
+            throw new RuntimeException("Erreur : utilisateur null");
+        }
+
         this.userConnecte = user;
 
         setTitle("Système Clinique - Tableau de Bord");
@@ -33,11 +37,13 @@ public class DashboardFrame extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Écouteur pour fermer la connexion à la fermeture de la fenêtre
+        // ✅ Écouteur pour fermer la connexion à la fermeture de la fenêtre
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
+                System.out.println("[DashboardFrame] Fermeture de la connexion MySQL...");
                 ConnexionDB.fermerConnexion();
+                System.exit(0);  // ✅ Force la fermeture
             }
         });
 
@@ -56,11 +62,14 @@ public class DashboardFrame extends JFrame {
         panelHeader.setPreferredSize(new Dimension(1000, 60));
         panelHeader.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitre = new JLabel("Système Clinique — Espace " + userConnecte.getRole());
+        // ✅ Sécurité null pour le rôle
+        String role = userConnecte.getRole() != null ? userConnecte.getRole() : "INCONNU";
+        JLabel lblTitre = new JLabel("Système Clinique — Espace " + role);
         lblTitre.setFont(new Font("Arial", Font.BOLD, 16));
         lblTitre.setForeground(Color.WHITE);
 
-        JLabel lblUser = new JLabel("Connecté : " + userConnecte.getUsername());
+        String username = userConnecte.getUsername() != null ? userConnecte.getUsername() : "Utilisateur";
+        JLabel lblUser = new JLabel("Connecté : " + username);
         lblUser.setFont(new Font("Arial", Font.ITALIC, 13));
         lblUser.setForeground(new Color(200, 200, 220));
 
@@ -83,6 +92,7 @@ public class DashboardFrame extends JFrame {
         add(panelMenu, BorderLayout.WEST);
         add(panelContenu, BorderLayout.CENTER);
 
+        // ✅ Charger le premier panel par défaut
         permuterVue(new PatientPanel(this));
     }
 
@@ -93,24 +103,45 @@ public class DashboardFrame extends JFrame {
     private void construireMenuDeNavigation() {
         String role = userConnecte.getRole();
 
+        // ✅ Vérifications null
+        if (role == null) {
+            role = "INCONNU";
+        }
+
+        // Tous les utilisateurs voient patients et rendez-vous
         ajouterBoutonMenu("Gestion Patients", e -> permuterVue(new PatientPanel(this)));
         ajouterBoutonMenu("Rendez-vous", e -> permuterVue(new AppointmentPanel(this)));
 
-        if ("Admin".equalsIgnoreCase(role)) {
+        // Admin seulement
+        if ("ADMIN".equalsIgnoreCase(role) || "Admin".equalsIgnoreCase(role)) {
             ajouterBoutonMenu("Gestion Médecins", e -> permuterVue(new DoctorPanel(this)));
         }
 
-        if ("Admin".equalsIgnoreCase(role) || "Medecin".equalsIgnoreCase(role)) {
+        // Admin et Médecin
+        if ("ADMIN".equalsIgnoreCase(role) || "Admin".equalsIgnoreCase(role) ||
+                "DOCTOR".equalsIgnoreCase(role) || "Doctor".equalsIgnoreCase(role)) {
             ajouterBoutonMenu("Consultations", e -> permuterVue(new ConsultationPanel(this)));
         }
 
+        // Séparateur avant déconnexion
         panelMenu.add(Box.createVerticalGlue());
-        ajouterBoutonMenu("Déconnexion", e -> deconnecter());
+
+        // ✅ Bouton déconnexion avec style différent
+        JButton btnDeconnexion = new JButton("Déconnexion");
+        btnDeconnexion.setFont(new Font("Arial", Font.PLAIN, 14));
+        btnDeconnexion.setForeground(new Color(255, 100, 100));
+        btnDeconnexion.setBackground(new Color(30, 30, 47));
+        btnDeconnexion.setBorderPainted(false);
+        btnDeconnexion.setFocusPainted(false);
+        btnDeconnexion.setMaximumSize(new Dimension(200, 45));
+        btnDeconnexion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnDeconnexion.addActionListener(e -> deconnecter());
+        panelMenu.add(btnDeconnexion);
     }
 
     /**
      * Crée et ajoute un bouton stylisé au menu latéral.
-     * * @param texte  Le libellé à afficher sur le bouton.
+     * @param texte  Le libellé à afficher sur le bouton.
      * @param action L'action (ActionListener) à exécuter lors du clic.
      */
     private void ajouterBoutonMenu(String texte, java.awt.event.ActionListener action) {
@@ -122,6 +153,7 @@ public class DashboardFrame extends JFrame {
         btn.setFocusPainted(false);
         btn.setMaximumSize(new Dimension(200, 45));
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));  // ✅ Curseur main
         btn.addActionListener(action);
         panelMenu.add(btn);
         panelMenu.add(Box.createVerticalStrut(10));
@@ -129,9 +161,14 @@ public class DashboardFrame extends JFrame {
 
     /**
      * Remplace le contenu central du tableau de bord par un nouveau panneau.
-     * * @param nouveauPanneau Le JPanel à afficher au centre de l'interface.
+     * @param nouveauPanneau Le JPanel à afficher au centre de l'interface.
      */
     public void permuterVue(JPanel nouveauPanneau) {
+        if (nouveauPanneau == null) {  // ✅ Sécurité
+            System.err.println("[DashboardFrame] Erreur : panneau null");
+            return;
+        }
+
         panelContenu.removeAll();
         panelContenu.add(nouveauPanneau, BorderLayout.CENTER);
         panelContenu.revalidate();
@@ -143,6 +180,7 @@ public class DashboardFrame extends JFrame {
      */
     private void deconnecter() {
         if (JOptionPane.showConfirmDialog(this, "Voulez-vous vous déconnecter ?", "Déconnexion", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            ConnexionDB.fermerConnexion();  // ✅ Fermer la connexion avant de partir
             dispose();
             new LoginFrame().setVisible(true);
         }

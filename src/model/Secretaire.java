@@ -12,23 +12,12 @@ import java.time.LocalDateTime;
  */
 public class Secretaire {
 
-    // Identifiant
-    /** Identifiant unique du secrétaire dans la base de données. */
+    // ============ ATTRIBUTS ============
+
     private int secretaireId;
-
-    // Lien avec users
-    /** Identifiant unique de l'utilisateur associé (clé étrangère vers la table des utilisateurs). */
     private int userId;
-
-    // Informations personnelles
-    /** Nom complet (nom et prénom) du secrétaire. */
     private String fullName;
-
-    /** Numéro de téléphone de contact du secrétaire. */
     private String phoneNumber;
-
-    // Traçabilité
-    /** Date et heure de la dernière connexion réussie au système. */
     private LocalDateTime lastLogin;
 
     // ============ CONSTRUCTEURS ============
@@ -60,63 +49,45 @@ public class Secretaire {
 
     // ============ GETTERS ET SETTERS ============
 
-    /**
-     * Récupère l'identifiant du secrétaire.
-     * @return L'identifiant unique du secrétaire.
-     */
     public int getSecretaireId() { return secretaireId; }
-
-    /**
-     * Modifie l'identifiant du secrétaire.
-     * @param secretaireId Le nouvel identifiant du secrétaire.
-     */
     public void setSecretaireId(int secretaireId) { this.secretaireId = secretaireId; }
 
-    /**
-     * Récupère l'identifiant de l'utilisateur lié.
-     * @return L'identifiant du compte utilisateur associé.
-     */
     public int getUserId() { return userId; }
-
-    /**
-     * Associe le secrétaire à un compte utilisateur spécifique.
-     * @param userId L'identifiant de l'utilisateur à lier.
-     */
     public void setUserId(int userId) { this.userId = userId; }
 
-    /**
-     * Récupère le nom complet du secrétaire.
-     * @return Le nom complet sous forme de chaîne de caractères.
-     */
     public String getFullName() { return fullName; }
-
-    /**
-     * Modifie le nom complet du secrétaire.
-     * @param fullName Le nouveau nom complet.
-     */
     public void setFullName(String fullName) { this.fullName = fullName; }
 
-    /**
-     * Récupère le numéro de téléphone du secrétaire.
-     * @return Le numéro de téléphone de contact.
-     */
     public String getPhoneNumber() { return phoneNumber; }
-
-    /**
-     * Modifie le numéro de téléphone du secrétaire.
-     * @param phoneNumber Le nouveau numéro de téléphone.
-     */
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 
-    /**
-     * Récupère la date et l'heure de la dernière connexion.
-     * @return L'horodatage de la dernière connexion (LocalDateTime).
-     */
     public LocalDateTime getLastLogin() { return lastLogin; }
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
+    // ============ MÉTHODES UTILES ============
 
     /**
-     * Met à jour l'horodatage de la dernière connexion du secrétaire.
-     * @param lastLogin La date et l'heure de la connexion actuelle.
+     * ✅ Valide les données critiques du secrétaire.
+     * @return true si les données sont valides.
      */
-    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+    public boolean estValide() {
+        return secretaireId > 0 &&
+                userId > 0 &&
+                fullName != null && !fullName.trim().isEmpty() &&
+                phoneNumber != null && !phoneNumber.trim().isEmpty();
+    }
+
+    /**
+     * ✅ Retourne une représentation textuelle du secrétaire.
+     */
+    @Override
+    public String toString() {
+        return "Secretaire{" +
+                "id=" + secretaireId +
+                ", userId=" + userId +
+                ", nom='" + fullName + '\'' +
+                ", telephone='" + phoneNumber + '\'' +
+                ", lastLogin=" + lastLogin +
+                '}';
+    }
 }

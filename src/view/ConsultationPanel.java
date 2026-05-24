@@ -111,7 +111,7 @@ public class ConsultationPanel extends JPanel {
      */
     public void chargerConsultations() {
         tableModel.setRowCount(0);
-        // ✅ CORRECTION : Utilise consultationDAO une seule fois, pas new ConsultationDAO()
+        // ✅ CORRECTION : Utilise consultationDAO une seule fois
         for (Consultation c : consultationDAO.toutesLesConsultations()) {
             if (c != null) {  // ✅ Sécurité
                 tableModel.addRow(new Object[]{
@@ -140,7 +140,6 @@ public class ConsultationPanel extends JPanel {
 
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
         // ✅ CORRECTION : Utilise parId() pour récupérer UNE SEULE consultation
-        // Au lieu de : new ConsultationDAO().toutesLesConsultations().stream()...filter()
         Consultation c = consultationDAO.parId(id);
 
         if (c != null) {
@@ -162,9 +161,9 @@ public class ConsultationPanel extends JPanel {
 
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
         if (JOptionPane.showConfirmDialog(this, "Supprimer la consultation ID : " + id + " ?") == JOptionPane.YES_OPTION) {
-            // ✅ CORRECTION : Utilise consultationDAO une seule fois + supprime juste la ligne
+            // ✅ CORRECTION : Supprime juste la ligne
             if (consultationDAO.supprimer(id)) {
-                tableModel.removeRow(ligne);  // ✅ Amélioration : supprime juste la ligne
+                tableModel.removeRow(ligne);
                 JOptionPane.showMessageDialog(this, "Consultation supprimée avec succès.");
             } else {
                 JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.");
