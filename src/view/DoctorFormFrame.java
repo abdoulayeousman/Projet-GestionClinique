@@ -100,6 +100,7 @@ public class DoctorFormFrame extends JDialog {
         setSize(500, 550);
         setLocationRelativeTo(parent);
         setResizable(false);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);  // ✅ Nettoyage ressources
 
         // Construction de l'interface
         initComposants();
@@ -272,16 +273,34 @@ public class DoctorFormFrame extends JDialog {
      * de type {@link LocalTime} en représentations textuelles modifiables.
      */
     private void remplirChamps() {
-        txtNomComplet.setText(doctorExistant.getFullName());
-        txtTelephone.setText(doctorExistant.getPhoneNumber());
-        comboSpecialite.setSelectedItem(doctorExistant.getSpecialization());
-        txtLicenseNumber.setText(doctorExistant.getLicenseNumber());
-        comboGrade.setSelectedItem(doctorExistant.getGrade());
+        if (doctorExistant == null) return;  // ✅ Sécurité
+
+        txtNomComplet.setText(doctorExistant.getFullName() != null ? doctorExistant.getFullName() : "");
+        txtTelephone.setText(doctorExistant.getPhoneNumber() != null ? doctorExistant.getPhoneNumber() : "");
+
+        if (doctorExistant.getSpecialization() != null) {
+            comboSpecialite.setSelectedItem(doctorExistant.getSpecialization());
+        }
+
+        txtLicenseNumber.setText(doctorExistant.getLicenseNumber() != null ? doctorExistant.getLicenseNumber() : "");
+
+        if (doctorExistant.getGrade() != null) {
+            comboGrade.setSelectedItem(doctorExistant.getGrade());
+        }
+
         txtYearsExperience.setText(String.valueOf(doctorExistant.getYearsOfExperience()));
-        comboService.setSelectedItem(doctorExistant.getService());
-        txtBureau.setText(doctorExistant.getBureau());
-        comboStatut.setSelectedItem(doctorExistant.getStatut());
-        txtJoursDisponibles.setText(doctorExistant.getJoursDisponibles());
+
+        if (doctorExistant.getService() != null) {
+            comboService.setSelectedItem(doctorExistant.getService());
+        }
+
+        txtBureau.setText(doctorExistant.getBureau() != null ? doctorExistant.getBureau() : "");
+
+        if (doctorExistant.getStatut() != null) {
+            comboStatut.setSelectedItem(doctorExistant.getStatut());
+        }
+
+        txtJoursDisponibles.setText(doctorExistant.getJoursDisponibles() != null ? doctorExistant.getJoursDisponibles() : "");
 
         // Conversion LocalTime → String pour affichage
         if (doctorExistant.getHeureDebut() != null) {
@@ -291,8 +310,11 @@ public class DoctorFormFrame extends JDialog {
             txtHeureFin.setText(doctorExistant.getHeureFin().toString());
         }
 
-        comboPays.setSelectedItem(doctorExistant.getPays());
-        txtVille.setText(doctorExistant.getVille());
+        if (doctorExistant.getPays() != null) {
+            comboPays.setSelectedItem(doctorExistant.getPays());
+        }
+
+        txtVille.setText(doctorExistant.getVille() != null ? doctorExistant.getVille() : "");
     }
 
     // ============ ENREGISTREMENT ============
@@ -325,11 +347,26 @@ public class DoctorFormFrame extends JDialog {
             return;
         }
 
-        // 3. Validation années d'expérience
+        // ✅ Validation années d'expérience
         int yearsInt = 0;
         if (!years.isEmpty()) {
             try {
                 yearsInt = Integer.parseInt(years);
+                // ✅ Validation métier
+                if (yearsInt < 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Années d'expérience ne peut pas être négative !",
+                            "Erreur",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (yearsInt > 80) {
+                    JOptionPane.showMessageDialog(this,
+                            "Années d'expérience non plausible (max 80) !",
+                            "Erreur",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this,
                         "Années d'expérience doit être un nombre !",
@@ -348,6 +385,15 @@ public class DoctorFormFrame extends JDialog {
             }
             if (!txtHeureFin.getText().trim().isEmpty()) {
                 heureFin = LocalTime.parse(txtHeureFin.getText().trim());
+            }
+
+            // ✅ Validation métier : heureDebut < heureFin
+            if (heureDebut != null && heureFin != null && heureDebut.isAfter(heureFin)) {
+                JOptionPane.showMessageDialog(this,
+                        "L'heure de début doit être avant l'heure de fin !",
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
             }
         } catch (DateTimeParseException e) {
             JOptionPane.showMessageDialog(this,

@@ -31,11 +31,17 @@ public class ConsultationDAO {
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return liste;
+            }
+
             while (rs.next()) {
                 liste.add(mapperConsultation(rs));
             }
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors du listage : " + e.getMessage());
             e.printStackTrace();
         }
         return liste;
@@ -51,10 +57,21 @@ public class ConsultationDAO {
      */
     public List<Consultation> parPatient(int patientId) {
         List<Consultation> liste = new ArrayList<>();
+
+        if (patientId <= 0) {
+            System.err.println("[ConsultationDAO] Erreur : patient_id obligatoire et > 0");
+            return liste;
+        }
+
         String sql = "SELECT * FROM consultations WHERE patient_id = ? ORDER BY date_consultation DESC";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return liste;
+            }
 
             stmt.setInt(1, patientId);
 
@@ -65,6 +82,7 @@ public class ConsultationDAO {
             }
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors de la recherche par patient : " + e.getMessage());
             e.printStackTrace();
         }
         return liste;
@@ -74,16 +92,26 @@ public class ConsultationDAO {
 
     /**
      * Recherche une consultation spécifique par son identifiant unique.
-     * Useful pour les besoins d'affichage détaillé ou de génération de rapports.
+     * Utile pour les besoins d'affichage détaillé ou de génération de rapports.
      *
      * @param id L'identifiant de la consultation recherchée.
      * @return L'objet {@link Consultation} trouvé, ou <code>null</code> si aucun enregistrement ne correspond.
      */
     public Consultation parId(int id) {
+        if (id <= 0) {
+            System.err.println("[ConsultationDAO] Erreur : consultation_id obligatoire et > 0");
+            return null;
+        }
+
         String sql = "SELECT * FROM consultations WHERE consultation_id = ?";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return null;
+            }
 
             stmt.setInt(1, id);
 
@@ -94,6 +122,7 @@ public class ConsultationDAO {
             }
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors de la recherche par ID : " + e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -105,11 +134,38 @@ public class ConsultationDAO {
      * Insère un nouvel enregistrement de consultation dans la base de données.
      * Gère la conversion des types temporels Java 8 vers les types SQL appropriés et
      * récupère automatiquement l'ID auto-incrémenté généré par la base de données.
+     * ✅ Validations : appointment_id, patient_id, doctor_id, diagnostic obligatoires
      *
      * @param c L'objet {@link Consultation} contenant les données à insérer.
      * @return <code>true</code> si l'insertion a réussi, <code>false</code> sinon.
      */
     public boolean ajouter(Consultation c) {
+        // ✅ Validations métier
+        if (c == null) {
+            System.err.println("[ConsultationDAO] Erreur : objet Consultation null");
+            return false;
+        }
+
+        if (c.getAppointmentId() <= 0 || c.getPatientId() <= 0 || c.getDoctorId() <= 0) {
+            System.err.println("[ConsultationDAO] Erreur : appointment_id, patient_id, doctor_id obligatoires et > 0");
+            return false;
+        }
+
+        if (c.getDiagnostic() == null || c.getDiagnostic().trim().isEmpty()) {
+            System.err.println("[ConsultationDAO] Erreur : diagnostic obligatoire");
+            return false;
+        }
+
+        if (c.getDateConsultation() == null) {
+            System.err.println("[ConsultationDAO] Erreur : date_consultation obligatoire");
+            return false;
+        }
+
+        if (c.getNiveauDouleur() < 0 || c.getNiveauDouleur() > 10) {
+            System.err.println("[ConsultationDAO] Erreur : niveau_douleur doit être entre 0 et 10");
+            return false;
+        }
+
         String sql = "INSERT INTO consultations (appointment_id, patient_id, doctor_id, " +
                 "date_consultation, duree_symptomes, niveau_douleur, diagnostic, " +
                 "notes_medicales, chemin_photo, ancienne_ordonnance, " +
@@ -122,6 +178,11 @@ public class ConsultationDAO {
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
+
             stmt.setInt(1, c.getAppointmentId());
             stmt.setInt(2, c.getPatientId());
             stmt.setInt(3, c.getDoctorId());
@@ -132,18 +193,18 @@ public class ConsultationDAO {
                 stmt.setNull(4, Types.TIMESTAMP);
             }
 
-            stmt.setString(5, c.getDureeSymptomes());
+            stmt.setString(5, c.getDureeSymptomes() != null ? c.getDureeSymptomes() : null);
             stmt.setInt(6, c.getNiveauDouleur());
-            stmt.setString(7, c.getDiagnostic());
-            stmt.setString(8, c.getNotesMedicales());
-            stmt.setString(9, c.getCheminPhoto());
-            stmt.setString(10, c.getAncienneOrdonnance());
-            stmt.setString(11, c.getAncienResultatAnalyse());
-            stmt.setString(12, c.getAnalyseDemandee());
-            stmt.setString(13, c.getResultatAnalyse());
-            stmt.setString(14, c.getOrdonnance());
-            stmt.setString(15, c.getDosage());
-            stmt.setString(16, c.getDureeTraitement());
+            stmt.setString(7, c.getDiagnostic().trim());
+            stmt.setString(8, c.getNotesMedicales() != null ? c.getNotesMedicales() : null);
+            stmt.setString(9, c.getCheminPhoto() != null ? c.getCheminPhoto() : null);
+            stmt.setString(10, c.getAncienneOrdonnance() != null ? c.getAncienneOrdonnance() : null);
+            stmt.setString(11, c.getAncienResultatAnalyse() != null ? c.getAncienResultatAnalyse() : null);
+            stmt.setString(12, c.getAnalyseDemandee() != null ? c.getAnalyseDemandee() : null);
+            stmt.setString(13, c.getResultatAnalyse() != null ? c.getResultatAnalyse() : null);
+            stmt.setString(14, c.getOrdonnance() != null ? c.getOrdonnance() : null);
+            stmt.setString(15, c.getDosage() != null ? c.getDosage() : null);
+            stmt.setString(16, c.getDureeTraitement() != null ? c.getDureeTraitement() : null);
 
             if (c.getDateProchainControle() != null) {
                 stmt.setDate(17, Date.valueOf(c.getDateProchainControle()));
@@ -151,8 +212,8 @@ public class ConsultationDAO {
                 stmt.setNull(17, Types.DATE);
             }
 
-            stmt.setString(18, c.getInstructionsControle());
-            stmt.setString(19, c.getStatut());
+            stmt.setString(18, c.getInstructionsControle() != null ? c.getInstructionsControle() : null);
+            stmt.setString(19, c.getStatut() != null ? c.getStatut() : "En cours");
 
             int rowsAffected = stmt.executeUpdate();
 
@@ -163,11 +224,13 @@ public class ConsultationDAO {
                         c.setConsultationId(generatedKeys.getInt(1));
                     }
                 }
+                System.out.println("[ConsultationDAO] Consultation créée avec succès : ID " + c.getConsultationId());
                 return true;
             }
             return false;
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors de l'ajout : " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -183,6 +246,22 @@ public class ConsultationDAO {
      * @return <code>true</code> si la mise à jour en base de données a été confirmée, <code>false</code> sinon.
      */
     public boolean modifier(Consultation c) {
+        // ✅ Validations métier
+        if (c == null || c.getConsultationId() <= 0) {
+            System.err.println("[ConsultationDAO] Erreur : consultation_id obligatoire et > 0");
+            return false;
+        }
+
+        if (c.getDiagnostic() == null || c.getDiagnostic().trim().isEmpty()) {
+            System.err.println("[ConsultationDAO] Erreur : diagnostic obligatoire");
+            return false;
+        }
+
+        if (c.getNiveauDouleur() < 0 || c.getNiveauDouleur() > 10) {
+            System.err.println("[ConsultationDAO] Erreur : niveau_douleur doit être entre 0 et 10");
+            return false;
+        }
+
         String sql = "UPDATE consultations SET diagnostic = ?, notes_medicales = ?, " +
                 "duree_symptomes = ?, niveau_douleur = ?, " +
                 "analyse_demandee = ?, resultat_analyse = ?, " +
@@ -193,15 +272,20 @@ public class ConsultationDAO {
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, c.getDiagnostic());
-            stmt.setString(2, c.getNotesMedicales());
-            stmt.setString(3, c.getDureeSymptomes());
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
+
+            stmt.setString(1, c.getDiagnostic().trim());
+            stmt.setString(2, c.getNotesMedicales() != null ? c.getNotesMedicales() : null);
+            stmt.setString(3, c.getDureeSymptomes() != null ? c.getDureeSymptomes() : null);
             stmt.setInt(4, c.getNiveauDouleur());
-            stmt.setString(5, c.getAnalyseDemandee());
-            stmt.setString(6, c.getResultatAnalyse());
-            stmt.setString(7, c.getOrdonnance());
-            stmt.setString(8, c.getDosage());
-            stmt.setString(9, c.getDureeTraitement());
+            stmt.setString(5, c.getAnalyseDemandee() != null ? c.getAnalyseDemandee() : null);
+            stmt.setString(6, c.getResultatAnalyse() != null ? c.getResultatAnalyse() : null);
+            stmt.setString(7, c.getOrdonnance() != null ? c.getOrdonnance() : null);
+            stmt.setString(8, c.getDosage() != null ? c.getDosage() : null);
+            stmt.setString(9, c.getDureeTraitement() != null ? c.getDureeTraitement() : null);
 
             if (c.getDateProchainControle() != null) {
                 stmt.setDate(10, Date.valueOf(c.getDateProchainControle()));
@@ -209,13 +293,21 @@ public class ConsultationDAO {
                 stmt.setNull(10, Types.DATE);
             }
 
-            stmt.setString(11, c.getInstructionsControle());
-            stmt.setString(12, c.getStatut());
+            stmt.setString(11, c.getInstructionsControle() != null ? c.getInstructionsControle() : null);
+            stmt.setString(12, c.getStatut() != null ? c.getStatut() : "En cours");
             stmt.setInt(13, c.getConsultationId());
 
-            return stmt.executeUpdate() > 0;
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("[ConsultationDAO] Consultation ID " + c.getConsultationId() + " modifiée avec succès");
+                return true;
+            } else {
+                System.err.println("[ConsultationDAO] Aucune consultation trouvée pour l'ID : " + c.getConsultationId());
+                return false;
+            }
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors de la modification : " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -230,15 +322,34 @@ public class ConsultationDAO {
      * @return <code>true</code> si la ligne a bien été supprimée, <code>false</code> sinon.
      */
     public boolean supprimer(int id) {
+        if (id <= 0) {
+            System.err.println("[ConsultationDAO] Erreur : consultation_id obligatoire et > 0");
+            return false;
+        }
+
         String sql = "DELETE FROM consultations WHERE consultation_id = ?";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
+
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("[ConsultationDAO] Consultation ID " + id + " supprimée avec succès");
+                return true;
+            } else {
+                System.err.println("[ConsultationDAO] Aucune consultation trouvée pour l'ID : " + id);
+                return false;
+            }
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors de la suppression : " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -254,16 +365,28 @@ public class ConsultationDAO {
      * @return <code>true</code> si le changement a été appliqué, <code>false</code> sinon.
      */
     public boolean changerStatut(int id, String nouveauStatut) {
+        if (id <= 0 || nouveauStatut == null || nouveauStatut.trim().isEmpty()) {
+            System.err.println("[ConsultationDAO] Erreur : consultation_id et nouveau statut obligatoires");
+            return false;
+        }
+
         String sql = "UPDATE consultations SET statut = ? WHERE consultation_id = ?";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, nouveauStatut);
+            if (conn == null) {
+                System.err.println("[ConsultationDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
+
+            stmt.setString(1, nouveauStatut.trim());
             stmt.setInt(2, id);
+
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            System.err.println("[ConsultationDAO] Erreur lors du changement de statut : " + e.getMessage());
             e.printStackTrace();
             return false;
         }

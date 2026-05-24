@@ -27,6 +27,7 @@ public class ConsultationPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTable table;
     private DashboardFrame dashboard;
+    private final ConsultationDAO consultationDAO;  // ✅ Instance unique
 
     /**
      * Initialise le panneau de gestion des consultations.
@@ -34,6 +35,7 @@ public class ConsultationPanel extends JPanel {
      */
     public ConsultationPanel(DashboardFrame dashboard) {
         this.dashboard = dashboard;
+        this.consultationDAO = new ConsultationDAO();  // ✅ Créé UNE SEULE FOIS
         setLayout(new BorderLayout(10, 10));
         setBackground(FOND_PANEL);
         initComposants();
@@ -105,15 +107,19 @@ public class ConsultationPanel extends JPanel {
 
     /**
      * Charge les données depuis le DAO vers le tableau.
+     * ✅ Utilise l'instance unique consultationDAO
      */
     public void chargerConsultations() {
         tableModel.setRowCount(0);
-        for (Consultation c : new ConsultationDAO().toutesLesConsultations()) {
-            tableModel.addRow(new Object[]{
-                    c.getConsultationId(), c.getAppointmentId(), c.getPatientId(),
-                    c.getDoctorId(), c.getDateConsultation(), c.getDiagnostic(),
-                    c.getOrdonnance(), c.getStatut()
-            });
+        // ✅ CORRECTION : Utilise consultationDAO une seule fois, pas new ConsultationDAO()
+        for (Consultation c : consultationDAO.toutesLesConsultations()) {
+            if (c != null) {  // ✅ Sécurité
+                tableModel.addRow(new Object[]{
+                        c.getConsultationId(), c.getAppointmentId(), c.getPatientId(),
+                        c.getDoctorId(), c.getDateConsultation(), c.getDiagnostic(),
+                        c.getOrdonnance(), c.getStatut()
+                });
+            }
         }
     }
 
@@ -121,28 +127,48 @@ public class ConsultationPanel extends JPanel {
         new ConsultationFormFrame(dashboard, this, null).setVisible(true);
     }
 
+    /**
+     * Modifie la consultation sélectionnée.
+     * ✅ CORRECTION : Utilise parId() au lieu de charger TOUTES les consultations O(n²) → O(1)
+     */
     private void modifierConsultation() {
         int ligne = table.getSelectedRow();
         if (ligne == -1) {
             JOptionPane.showMessageDialog(this, "Sélectionnez une consultation !");
             return;
         }
-        int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
-        Consultation c = new ConsultationDAO().toutesLesConsultations().stream()
-                .filter(cons -> cons.getConsultationId() == id).findFirst().orElse(null);
 
-        if (c != null) new ConsultationFormFrame(dashboard, this, c).setVisible(true);
+        int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
+        // ✅ CORRECTION : Utilise parId() pour récupérer UNE SEULE consultation
+        // Au lieu de : new ConsultationDAO().toutesLesConsultations().stream()...filter()
+        Consultation c = consultationDAO.parId(id);
+
+        if (c != null) {
+            new ConsultationFormFrame(dashboard, this, c).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Consultation non trouvée !");
+        }
     }
 
+    /**
+     * Supprime la consultation sélectionnée.
+     */
     private void supprimerConsultation() {
         int ligne = table.getSelectedRow();
         if (ligne == -1) {
             JOptionPane.showMessageDialog(this, "Sélectionnez une consultation !");
             return;
         }
+
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
         if (JOptionPane.showConfirmDialog(this, "Supprimer la consultation ID : " + id + " ?") == JOptionPane.YES_OPTION) {
-            if (new ConsultationDAO().supprimer(id)) chargerConsultations();
+            // ✅ CORRECTION : Utilise consultationDAO une seule fois + supprime juste la ligne
+            if (consultationDAO.supprimer(id)) {
+                tableModel.removeRow(ligne);  // ✅ Amélioration : supprime juste la ligne
+                JOptionPane.showMessageDialog(this, "Consultation supprimée avec succès.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.");
+            }
         }
     }
 }

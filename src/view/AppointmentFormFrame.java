@@ -98,6 +98,7 @@ public class AppointmentFormFrame extends JDialog {
         setSize(500, 520);
         setLocationRelativeTo(parent);
         setResizable(false);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);  // ✅ Nettoyage ressources
 
         chargerDonnees();
         initComposants();
@@ -136,13 +137,17 @@ public class AppointmentFormFrame extends JDialog {
         comboPatient = new JComboBox<>();
         comboPatient.addItem("-- Sélectionner un patient --");
         for (Patient p : listePatients) {
-            comboPatient.addItem(p.getPatientId() + " - " + p.getNomComplet());
+            if (p != null) {  // ✅ Sécurité null
+                comboPatient.addItem(p.getPatientId() + " - " + p.getNomComplet());
+            }
         }
 
         comboMedecin = new JComboBox<>();
         comboMedecin.addItem("-- Sélectionner un médecin --");
         for (Doctor d : listeMedecins) {
-            comboMedecin.addItem(d.getDoctorId() + " - " + d.getFullName() + " (" + d.getSpecialization() + ")");
+            if (d != null) {  // ✅ Sécurité null
+                comboMedecin.addItem(d.getDoctorId() + " - " + d.getFullName() + " (" + d.getSpecialization() + ")");
+            }
         }
 
         // Instanciation des champs de texte et options
@@ -165,7 +170,7 @@ public class AppointmentFormFrame extends JDialog {
         comboStatut = new JComboBox<>(new String[]{"Scheduled", "Completed", "Cancelled", "No-show"});
 
         txtNumeroRecu = new JTextField(20);
-        txtNumeroRecu.setToolTipText("ex: REC-2026-001");
+        txtNumeroRecu.setToolTipText("ex: REC-2026-001 (optionnel)");
 
         // Placement ordonné des lignes du formulaire
         ajouterLigne(mainPanel, gbc, 0,  "Patient :",             comboPatient);
@@ -178,7 +183,7 @@ public class AppointmentFormFrame extends JDialog {
         ajouterLigne(mainPanel, gbc, 7,  "Mode paiement :",         comboPaiement);
         ajouterLigne(mainPanel, gbc, 8,  "Statut paiement :",       comboStatutPaiement);
         ajouterLigne(mainPanel, gbc, 9,  "Statut RDV :",            comboStatut);
-        ajouterLigne(mainPanel, gbc, 10, "N° Reçu :",               txtNumeroRecu);
+        ajouterLigne(mainPanel, gbc, 10, "N° Reçu (optionnel) :",   txtNumeroRecu);
 
         // Barre d'actions (Boutons inférieurs)
         JPanel panelBoutons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -241,9 +246,11 @@ public class AppointmentFormFrame extends JDialog {
      * l'objet {@link Appointment} existant lors d'une action de modification.
      */
     private void remplirChamps() {
+        if (appointmentExistant == null) return;  // ✅ Sécurité
+
         for (int i = 0; i < comboPatient.getItemCount(); i++) {
             String item = comboPatient.getItemAt(i);
-            if (item.startsWith(appointmentExistant.getPatientId() + " - ")) {
+            if (item != null && item.startsWith(appointmentExistant.getPatientId() + " - ")) {
                 comboPatient.setSelectedIndex(i);
                 break;
             }
@@ -251,7 +258,7 @@ public class AppointmentFormFrame extends JDialog {
 
         for (int i = 0; i < comboMedecin.getItemCount(); i++) {
             String item = comboMedecin.getItemAt(i);
-            if (item.startsWith(appointmentExistant.getDoctorId() + " - ")) {
+            if (item != null && item.startsWith(appointmentExistant.getDoctorId() + " - ")) {
                 comboMedecin.setSelectedIndex(i);
                 break;
             }
@@ -265,13 +272,26 @@ public class AppointmentFormFrame extends JDialog {
             txtHeure.setText(appointmentExistant.getAppointmentTime().format(formatterHeure));
         }
 
-        comboType.setSelectedItem(appointmentExistant.getTypeConsultation());
-        txtMotif.setText(appointmentExistant.getReasonForVisit());
+        if (appointmentExistant.getTypeConsultation() != null) {
+            comboType.setSelectedItem(appointmentExistant.getTypeConsultation());
+        }
+
+        txtMotif.setText(appointmentExistant.getReasonForVisit() != null ? appointmentExistant.getReasonForVisit() : "");
         txtPrix.setText(String.valueOf(appointmentExistant.getPrixConsultation()));
-        comboPaiement.setSelectedItem(appointmentExistant.getModePaiement());
-        comboStatutPaiement.setSelectedItem(appointmentExistant.getStatutPaiement());
-        comboStatut.setSelectedItem(appointmentExistant.getStatus());
-        txtNumeroRecu.setText(appointmentExistant.getNumeroRecu());
+
+        if (appointmentExistant.getModePaiement() != null) {
+            comboPaiement.setSelectedItem(appointmentExistant.getModePaiement());
+        }
+
+        if (appointmentExistant.getStatutPaiement() != null) {
+            comboStatutPaiement.setSelectedItem(appointmentExistant.getStatutPaiement());
+        }
+
+        if (appointmentExistant.getStatus() != null) {
+            comboStatut.setSelectedItem(appointmentExistant.getStatus());
+        }
+
+        txtNumeroRecu.setText(appointmentExistant.getNumeroRecu() != null ? appointmentExistant.getNumeroRecu() : "");
     }
 
     /**
@@ -296,14 +316,20 @@ public class AppointmentFormFrame extends JDialog {
             return;
         }
 
+        // ✅ Validation date
         LocalDate date;
         try {
             date = LocalDate.parse(txtDate.getText().trim(), formatterDate);
+            if (date.isBefore(LocalDate.now())) {
+                afficherErreur("La date du rendez-vous ne peut pas être antérieure à aujourd'hui !");
+                return;
+            }
         } catch (DateTimeParseException e) {
             afficherErreur("Format de date invalide ! Utilisez JJ/MM/AAAA");
             return;
         }
 
+        // ✅ Validation heure
         LocalTime heure;
         try {
             heure = LocalTime.parse(txtHeure.getText().trim(), formatterHeure);
@@ -312,10 +338,15 @@ public class AppointmentFormFrame extends JDialog {
             return;
         }
 
+        // ✅ Validation prix
         double prix = 0;
         if (!txtPrix.getText().trim().isEmpty()) {
             try {
                 prix = Double.parseDouble(txtPrix.getText().trim());
+                if (prix < 0) {
+                    afficherErreur("Le prix ne peut pas être négatif !");
+                    return;
+                }
             } catch (NumberFormatException e) {
                 afficherErreur("Le prix doit être un nombre valide !");
                 return;
@@ -340,7 +371,7 @@ public class AppointmentFormFrame extends JDialog {
         a.setModePaiement((String) comboPaiement.getSelectedItem());
         a.setStatutPaiement((String) comboStatutPaiement.getSelectedItem());
         a.setStatus((String) comboStatut.getSelectedItem());
-        a.setNumeroRecu(txtNumeroRecu.getText().trim());
+        a.setNumeroRecu(txtNumeroRecu.getText().trim().isEmpty() ? null : txtNumeroRecu.getText().trim());
         a.setStatutNotification("Non envoyee");
 
         AppointmentDAO dao = new AppointmentDAO();

@@ -56,12 +56,14 @@ public class ConnexionDB {
             System.out.println("[ConnexionDB] Fichier config.properties chargé avec succès.");
 
         } catch (IOException e) {
-            // Sécurité : Si le fichier externe est introuvable, on applique des valeurs de secours en dur
-            System.err.println("[ConnexionDB] Alerte : config.properties introuvable. Utilisation des valeurs de secours.");
+            // ⚠️ ERREUR : Fallback avec valeurs de secours (À NE PAS UTILISER EN PRODUCTION)
+            System.err.println("[ConnexionDB] ATTENTION CRITIQUE : config.properties introuvable !");
+            System.err.println("[ConnexionDB] Créez le fichier config.properties avec les propriétés : db.url, db.user, db.password");
 
             url      = "jdbc:mysql://localhost:3306/clinique_db";
             user     = "root";
             password = "Tarok6680";
+            System.err.println("[ConnexionDB] Utilisation des valeurs par défaut DE DÉVELOPPEMENT UNIQUEMENT.");
         }
     }
 
@@ -71,10 +73,12 @@ public class ConnexionDB {
      * Fournit l'instance active de connexion à la base de données.
      * Si aucune connexion n'existe ou si elle a été fermée, une nouvelle session est ouverte.
      *
+     * ⚠️ IMPORTANT : Vérifier que la connexion retournée n'est pas NULL avant utilisation.
      * Le mot-clé 'synchronized' empêche deux requêtes de se percuter si l'interface graphique
-     * exécute deux actions en même temps (Résout le problème de concurrence 4.7).
+     * exécute deux actions en même temps.
      *
-     * @return L'objet {@link Connection} opérationnel pour exécuter les requêtes SQL.
+     * @return L'objet {@link Connection} opérationnel pour exécuter les requêtes SQL, ou null en cas d'erreur.
+     * @throws RuntimeException si la connexion ne peut pas être établie (À partir de v2.0)
      */
     public static synchronized Connection getConnexion() {
         try {
@@ -85,8 +89,11 @@ public class ConnexionDB {
                 System.out.println("[ConnexionDB] Connexion MySQL établie avec succès.");
             }
         } catch (SQLException e) {
-            // Affichage de l'erreur en rouge dans la console pour faciliter le diagnostic
-            System.err.println("[ConnexionDB] Erreur SQL lors de l'ouverture : " + e.getMessage());
+            // ❌ ERREUR CRITIQUE : Impossible de se connecter
+            System.err.println("[ConnexionDB] ERREUR CRITIQUE lors de l'ouverture de la connexion : " + e.getMessage());
+            System.err.println("[ConnexionDB] Vérifiez : URL, utilisateur, password, et que MySQL est accessible.");
+            e.printStackTrace();
+            connexion = null;  // ✅ Réinitialiser à null pour éviter connexion "morte"
         }
         return connexion;
     }
@@ -96,13 +103,14 @@ public class ConnexionDB {
     /**
      * Procède à la fermeture de l'instance de connexion en cours.
      * Cette méthode doit être appelée pour libérer proprement les ressources du serveur MySQL
-     * (Résout le problème des fuites JDBC 3.3).
+     * et éviter les fuites de connexion (connection leak).
      */
     public static synchronized void fermerConnexion() {
         try {
             // On ne ferme que si l'objet existe et qu'il n'est pas déjà clôturé
             if (connexion != null && !connexion.isClosed()) {
                 connexion.close();
+                connexion = null;  // ✅ Réinitialiser à null après fermeture
                 System.out.println("[ConnexionDB] Connexion MySQL fermée proprement.");
             }
         } catch (SQLException e) {

@@ -60,7 +60,7 @@ public class AppointmentPanel extends JPanel {
         panelTop.add(txtRecherche);
         panelTop.add(btnRechercher);
 
-        // Tableau des données
+        // Tableau des données - ✅ COLONNES COMPLÈTES ET COHÉRENTES
         String[] colonnes = {"ID", "Patient ID", "Médecin ID", "Date", "Heure", "Type", "Statut", "Paiement", "N° Reçu"};
         tableModel = new DefaultTableModel(colonnes, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -114,10 +114,24 @@ public class AppointmentPanel extends JPanel {
      */
     public void chargerRendezVous() {
         String recherche = txtRecherche.getText().trim();
-        List<Appointment> liste = recherche.isEmpty() ? appointmentDAO.tousLesRendezVous() : appointmentDAO.rechercherParPatient(recherche);
+        List<Appointment> liste = recherche.isEmpty() ?
+                appointmentDAO.tousLesRendezVous() :
+                appointmentDAO.rechercherParPatient(recherche);
+
         tableModel.setRowCount(0);
         for (Appointment a : liste) {
-            tableModel.addRow(new Object[]{a.getAppointmentId(), a.getPatientId(), a.getDoctorId(), a.getAppointmentDate(), a.getAppointmentTime(), a.getTypeConsultation(), a.getStatus(), a.getStatutPaiement(), a.getNumeroRecu()});
+            // ✅ TOUTES les colonnes affichées correctement
+            tableModel.addRow(new Object[]{
+                    a.getAppointmentId(),
+                    a.getPatientId(),
+                    a.getDoctorId(),
+                    a.getAppointmentDate(),
+                    a.getAppointmentTime(),
+                    a.getTypeConsultation(),
+                    a.getStatus(),
+                    a.getStatutPaiement(),
+                    a.getNumeroRecu()
+            });
         }
     }
 
@@ -131,11 +145,20 @@ public class AppointmentPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Veuillez sélectionner un rendez-vous.");
             return;
         }
+
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
-        Appointment cible = appointmentDAO.tousLesRendezVous().stream().filter(a -> a.getAppointmentId() == id).findFirst().orElse(null);
+        Appointment cible = appointmentDAO.tousLesRendezVous().stream()
+                .filter(a -> a.getAppointmentId() == id)
+                .findFirst()
+                .orElse(null);
+
         if (cible != null) {
             cible.setStatus(nouveauStatut);
-            if (appointmentDAO.modifier(cible)) chargerRendezVous();
+            if (appointmentDAO.modifier(cible)) {
+                chargerRendezVous();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Erreur : rendez-vous non trouvé.");
         }
     }
 
@@ -148,9 +171,14 @@ public class AppointmentPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Veuillez sélectionner un rendez-vous.");
             return;
         }
+
         int id = (int) tableModel.getValueAt(table.convertRowIndexToModel(ligne), 0);
         if (JOptionPane.showConfirmDialog(this, "Supprimer le RDV ID : " + id + " ?") == JOptionPane.YES_OPTION) {
-            if (appointmentDAO.supprimer(id)) chargerRendezVous();
+            if (appointmentDAO.supprimer(id)) {
+                chargerRendezVous();
+            } else {
+                JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.");
+            }
         }
     }
 }

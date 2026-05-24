@@ -75,6 +75,7 @@ public class PatientFormFrame extends JDialog {
         setSize(450, 400);
         setLocationRelativeTo(parent);
         setResizable(false);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);  // ✅ Nettoyage ressources
 
         // Construction de l'interface
         initComposants();
@@ -205,19 +206,28 @@ public class PatientFormFrame extends JDialog {
      * afin de pré-remplir l'ensemble des champs graphiques de l'interface.
      */
     private void remplirChamps() {
-        txtNomComplet.setText(patientExistant.getNomComplet());
+        if (patientExistant == null) return;  // ✅ Sécurité
+
+        txtNomComplet.setText(patientExistant.getNomComplet() != null ? patientExistant.getNomComplet() : "");
 
         // Conversion LocalDate → String pour affichage
         if (patientExistant.getDateNaissance() != null) {
-            txtDateNaissance.setText(
-                    patientExistant.getDateNaissance().format(formatter)
-            );
+            txtDateNaissance.setText(patientExistant.getDateNaissance().format(formatter));
         }
 
-        comboSexe.setSelectedItem(patientExistant.getSexe());
-        txtTelephone.setText(patientExistant.getTelephone());
-        comboService.setSelectedItem(patientExistant.getService());
-        comboPays.setSelectedItem(patientExistant.getPays());
+        if (patientExistant.getSexe() != null) {
+            comboSexe.setSelectedItem(patientExistant.getSexe());
+        }
+
+        txtTelephone.setText(patientExistant.getTelephone() != null ? patientExistant.getTelephone() : "");
+
+        if (patientExistant.getService() != null) {
+            comboService.setSelectedItem(patientExistant.getService());
+        }
+
+        if (patientExistant.getPays() != null) {
+            comboPays.setSelectedItem(patientExistant.getPays());
+        }
     }
 
     // ============ ENREGISTREMENT ============
@@ -235,9 +245,18 @@ public class PatientFormFrame extends JDialog {
         String tel     = txtTelephone.getText().trim();
 
         // 2. Validation des champs obligatoires
-        if (nom.isEmpty() || dateStr.isEmpty() || tel.isEmpty()) {
+        if (nom.isEmpty() || dateStr.isEmpty()) {  // ✅ Téléphone optionnel
             JOptionPane.showMessageDialog(this,
-                    "Veuillez remplir tous les champs obligatoires !",
+                    "Veuillez remplir tous les champs obligatoires (Nom, Date naissance) !",
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // ✅ Validation téléphone si fourni
+        if (!tel.isEmpty() && !tel.matches("\\d{8,}")) {
+            JOptionPane.showMessageDialog(this,
+                    "Téléphone invalide ! Doit contenir au moins 8 chiffres",
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -247,6 +266,23 @@ public class PatientFormFrame extends JDialog {
         LocalDate dateNaissance;
         try {
             dateNaissance = LocalDate.parse(dateStr, formatter);
+
+            // ✅ Validation métier de la date
+            if (dateNaissance.isAfter(LocalDate.now())) {
+                JOptionPane.showMessageDialog(this,
+                        "La date de naissance ne peut pas être dans le futur !",
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (dateNaissance.isBefore(LocalDate.now().minusYears(150))) {
+                JOptionPane.showMessageDialog(this,
+                        "La date de naissance n'est pas plausible !",
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
         } catch (DateTimeParseException e) {
             JOptionPane.showMessageDialog(this,
                     "Format de date invalide ! Utilisez JJ/MM/AAAA",
@@ -261,7 +297,7 @@ public class PatientFormFrame extends JDialog {
         p.setNomComplet(nom);
         p.setDateNaissance(dateNaissance);
         p.setSexe((String) comboSexe.getSelectedItem());
-        p.setTelephone(tel);
+        p.setTelephone(tel.isEmpty() ? null : tel);  // ✅ Null si vide
         p.setService((String) comboService.getSelectedItem());
         p.setPays((String) comboPays.getSelectedItem());
 

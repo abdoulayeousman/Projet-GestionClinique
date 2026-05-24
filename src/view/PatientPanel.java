@@ -29,6 +29,7 @@ public class PatientPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField txtRecherche;
     private DashboardFrame dashboard;
+    private final PatientDAO patientDAO;  // ✅ Instance unique du DAO
 
     /**
      * Initialise le panneau de gestion des patients.
@@ -36,6 +37,7 @@ public class PatientPanel extends JPanel {
      */
     public PatientPanel(DashboardFrame dashboard) {
         this.dashboard = dashboard;
+        this.patientDAO = new PatientDAO();  // ✅ Créé UNE SEULE FOIS
         setLayout(new BorderLayout(10, 10));
         setBackground(FOND_PANEL);
         initComposants();
@@ -112,21 +114,27 @@ public class PatientPanel extends JPanel {
 
     /**
      * Charge tous les patients depuis la base de données.
+     * ✅ Utilise l'instance unique patientDAO
      */
     public void chargerPatients() {
         tableModel.setRowCount(0);
-        for (Patient p : new PatientDAO().tousLesPatients()) {
+        // ✅ CORRECTION : Utilise patientDAO une seule fois, pas new PatientDAO()
+        for (Patient p : patientDAO.tousLesPatients()) {
             ajouterLigneTableau(p);
         }
     }
 
     /**
      * Filtre les patients par nom.
+     * ✅ Utilise l'instance unique patientDAO
      */
     public void rechercherPatient() {
         String recherche = txtRecherche.getText().trim();
         tableModel.setRowCount(0);
-        List<Patient> patients = recherche.isEmpty() ? new PatientDAO().tousLesPatients() : new PatientDAO().rechercherParNom(recherche);
+        // ✅ CORRECTION : Utilise patientDAO une seule fois
+        List<Patient> patients = recherche.isEmpty() ?
+                patientDAO.tousLesPatients() :
+                patientDAO.rechercherParNom(recherche);
         for (Patient p : patients) {
             ajouterLigneTableau(p);
         }
@@ -137,7 +145,17 @@ public class PatientPanel extends JPanel {
      * @param p L'objet Patient à afficher.
      */
     private void ajouterLigneTableau(Patient p) {
-        tableModel.addRow(new Object[]{p.getPatientId(), p.getNomComplet(), p.getDateNaissance(), p.getSexe(), p.getTelephone(), p.getService(), p.getPays()});
+        if (p != null) {  // ✅ Sécurité : vérifier que p n'est pas null
+            tableModel.addRow(new Object[]{
+                    p.getPatientId(),
+                    p.getNomComplet(),
+                    p.getDateNaissance(),
+                    p.getSexe(),
+                    p.getTelephone(),
+                    p.getService(),
+                    p.getPays()
+            });
+        }
     }
 
     /**
@@ -156,10 +174,16 @@ public class PatientPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Sélectionnez un patient !");
             return;
         }
-        // ... (Logique de récupération patient inchangée)
+
         int id = (int) tableModel.getValueAt(ligne, 0);
-        Patient p = new PatientDAO().trouverParId(id);
-        new PatientFormFrame(dashboard, this, p).setVisible(true);
+        // ✅ CORRECTION : Utilise patientDAO une seule fois
+        Patient p = patientDAO.trouverParId(id);
+
+        if (p != null) {
+            new PatientFormFrame(dashboard, this, p).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Patient non trouvé !");
+        }
     }
 
     /**
@@ -171,9 +195,16 @@ public class PatientPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Sélectionnez un patient !");
             return;
         }
+
         int id = (int) tableModel.getValueAt(ligne, 0);
         if (JOptionPane.showConfirmDialog(this, "Supprimer le patient ID : " + id + " ?") == JOptionPane.YES_OPTION) {
-            if (new PatientDAO().supprimer(id)) chargerPatients();
+            // ✅ CORRECTION : Utilise patientDAO une seule fois + supprime juste la ligne
+            if (patientDAO.supprimer(id)) {
+                tableModel.removeRow(ligne);  // ✅ Amélioration : supprime juste la ligne au lieu de recharger tout
+                JOptionPane.showMessageDialog(this, "Patient supprimé avec succès.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.");
+            }
         }
     }
 }

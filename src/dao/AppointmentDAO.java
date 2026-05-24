@@ -70,17 +70,39 @@ public class AppointmentDAO {
 
     /**
      * Persiste un nouveau rendez-vous dans la base de données.
+     * ✅ Validations : prix > 0, statut paiement valide
      *
      * @param a L'instance du rendez-vous à enregistrer.
      * @return {@code true} si l'insertion est effective ; {@code false} sinon.
      */
     public boolean ajouter(Appointment a) {
+        // ✅ Validations métier
+        if (a == null || a.getPatientId() <= 0 || a.getDoctorId() <= 0) {
+            System.err.println("[AppointmentDAO] Erreur : patient_id et doctor_id obligatoires et > 0");
+            return false;
+        }
+
+        if (a.getAppointmentDate() == null || a.getAppointmentTime() == null) {
+            System.err.println("[AppointmentDAO] Erreur : date et heure obligatoires");
+            return false;
+        }
+
+        if (a.getPrixConsultation() < 0) {
+            System.err.println("[AppointmentDAO] Erreur : prix_consultation ne peut pas être négatif");
+            return false;
+        }
+
         String sql = "INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, " +
                 "type_consultation, reason_for_visit, prix_consultation, mode_paiement, " +
                 "statut_paiement, status, numero_recu, statut_notification) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (conn == null) {
+                System.err.println("[AppointmentDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
 
             stmt.setInt(1, a.getPatientId());
             stmt.setInt(2, a.getDoctorId());
@@ -110,12 +132,23 @@ public class AppointmentDAO {
      * @return {@code true} si la mise à jour a réussi.
      */
     public boolean modifier(Appointment a) {
+        // ✅ Validations
+        if (a == null || a.getAppointmentId() <= 0) {
+            System.err.println("[AppointmentDAO] Erreur : appointment_id obligatoire et > 0");
+            return false;
+        }
+
         String sql = "UPDATE appointments SET patient_id=?, doctor_id=?, appointment_date=?, appointment_time=?, " +
                 "type_consultation=?, reason_for_visit=?, prix_consultation=?, mode_paiement=?, " +
                 "statut_paiement=?, status=?, numero_recu=? WHERE appointment_id=?";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (conn == null) {
+                System.err.println("[AppointmentDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
 
             stmt.setInt(1, a.getPatientId());
             stmt.setInt(2, a.getDoctorId());
@@ -145,10 +178,20 @@ public class AppointmentDAO {
      * @return {@code true} si l'enregistrement est supprimé.
      */
     public boolean supprimer(int id) {
+        if (id <= 0) {
+            System.err.println("[AppointmentDAO] Erreur : appointment_id obligatoire et > 0");
+            return false;
+        }
+
         String sql = "DELETE FROM appointments WHERE appointment_id = ?";
 
         try (Connection conn = ConnexionDB.getConnexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (conn == null) {
+                System.err.println("[AppointmentDAO] Erreur : connexion à la base de données impossible");
+                return false;
+            }
 
             stmt.setInt(1, id);
             return stmt.executeUpdate() > 0;
@@ -171,8 +214,15 @@ public class AppointmentDAO {
         a.setAppointmentId(rs.getInt("appointment_id"));
         a.setPatientId(rs.getInt("patient_id"));
         a.setDoctorId(rs.getInt("doctor_id"));
-        if (rs.getDate("appointment_date") != null) a.setAppointmentDate(rs.getDate("appointment_date").toLocalDate());
-        if (rs.getTime("appointment_time") != null) a.setAppointmentTime(rs.getTime("appointment_time").toLocalTime());
+
+        if (rs.getDate("appointment_date") != null) {
+            a.setAppointmentDate(rs.getDate("appointment_date").toLocalDate());
+        }
+
+        if (rs.getTime("appointment_time") != null) {
+            a.setAppointmentTime(rs.getTime("appointment_time").toLocalTime());
+        }
+
         a.setTypeConsultation(rs.getString("type_consultation"));
         a.setReasonForVisit(rs.getString("reason_for_visit"));
         a.setPrixConsultation(rs.getDouble("prix_consultation"));
@@ -181,6 +231,7 @@ public class AppointmentDAO {
         a.setStatus(rs.getString("status"));
         a.setNumeroRecu(rs.getString("numero_recu"));
         a.setStatutNotification(rs.getString("statut_notification"));
+
         return a;
     }
 }

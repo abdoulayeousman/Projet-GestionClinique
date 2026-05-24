@@ -36,7 +36,7 @@ public class DoctorPanel extends JPanel {
      */
     public DoctorPanel(DashboardFrame dashboard) {
         this.dashboard = dashboard;
-        this.doctorDAO = new DoctorDAO();
+        this.doctorDAO = new DoctorDAO();  // ✅ Instance unique
         initialiserComposants();
         rechercherMedecin();
     }
@@ -113,17 +113,21 @@ public class DoctorPanel extends JPanel {
 
     /**
      * Filtre et actualise dynamiquement les lignes du tableau via le {@link DoctorDAO}.
+     * ✅ Utilise l'instance unique doctorDAO
      */
     public void rechercherMedecin() {
         String recherche = txtRecherche.getText().trim();
+        // ✅ CORRECTION : Utilise doctorDAO une seule fois
         List<Doctor> liste = recherche.isEmpty() ? doctorDAO.tousLesMedecins() : doctorDAO.rechercherParNom(recherche);
 
         tableModel.setRowCount(0);
         for (Doctor d : liste) {
-            tableModel.addRow(new Object[]{
-                    d.getDoctorId(), d.getFullName(), d.getPhoneNumber(),
-                    d.getSpecialization(), d.getGrade(), d.getService(), d.getStatut()
-            });
+            if (d != null) {  // ✅ Sécurité
+                tableModel.addRow(new Object[]{
+                        d.getDoctorId(), d.getFullName(), d.getPhoneNumber(),
+                        d.getSpecialization(), d.getGrade(), d.getService(), d.getStatut()
+                });
+            }
         }
     }
 
@@ -136,10 +140,15 @@ public class DoctorPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Sélectionnez un médecin à modifier.", "Attention", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
         int id = (int) tableModel.getValueAt(ligne, 0);
+        // ✅ CORRECTION : Utilise doctorDAO une seule fois
         Doctor d = doctorDAO.trouverParId(id);
+
         if (d != null) {
             new DoctorFormFrame(dashboard, this, d).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Médecin non trouvé.", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -157,8 +166,9 @@ public class DoctorPanel extends JPanel {
         int choix = JOptionPane.showConfirmDialog(this, "Confirmez-vous la suppression du médecin ID : " + id + " ?", "Confirmation", JOptionPane.YES_NO_OPTION);
 
         if (choix == JOptionPane.YES_OPTION) {
+            // ✅ CORRECTION : Utilise doctorDAO une seule fois + supprime juste la ligne
             if (doctorDAO.supprimer(id)) {
-                tableModel.removeRow(ligne);
+                tableModel.removeRow(ligne);  // ✅ Amélioration : supprime juste la ligne
                 JOptionPane.showMessageDialog(this, "Profil supprimé avec succès.");
             } else {
                 JOptionPane.showMessageDialog(this, "Erreur lors de la suppression.", "Erreur", JOptionPane.ERROR_MESSAGE);

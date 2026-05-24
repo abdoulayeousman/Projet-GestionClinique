@@ -58,6 +58,7 @@ public class ConsultationFormFrame extends JDialog {
         setSize(650, 750);
         setLocationRelativeTo(parent);
         setResizable(false);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);  // ✅ Nettoyage ressources
 
         chargerRendezVous();
         initComposants();
@@ -70,10 +71,16 @@ public class ConsultationFormFrame extends JDialog {
         }
     }
 
+    /**
+     * Charge la liste des rendez-vous depuis la base de données.
+     */
     private void chargerRendezVous() {
         listeRendezVous = new AppointmentDAO().tousLesRendezVous();
     }
 
+    /**
+     * Initialise les composants graphiques du formulaire.
+     */
     private void initComposants() {
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
@@ -88,12 +95,14 @@ public class ConsultationFormFrame extends JDialog {
         comboRendezVous = new JComboBox<>();
         comboRendezVous.addItem("-- Sélectionner un rendez-vous --");
         for (Appointment a : listeRendezVous) {
-            comboRendezVous.addItem(
-                    a.getAppointmentId() + " | Patient:" + a.getPatientId()
-                            + " | Dr:" + a.getDoctorId()
-                            + " | " + a.getAppointmentDate()
-                            + " " + a.getAppointmentTime()
-            );
+            if (a != null) {  // ✅ Sécurité null
+                comboRendezVous.addItem(
+                        a.getAppointmentId() + " | Patient:" + a.getPatientId()
+                                + " | Dr:" + a.getDoctorId()
+                                + " | " + a.getAppointmentDate()
+                                + " " + a.getAppointmentTime()
+                );
+            }
         }
         ajouterLigne(mainPanel, gbc, 1, "Rendez-vous lié :", comboRendezVous);
 
@@ -151,7 +160,7 @@ public class ConsultationFormFrame extends JDialog {
         ajouterTitreSeparateur(mainPanel, gbc, 15, "📅 Prochain Contrôle");
 
         txtDateProchainControle = new JTextField(20);
-        txtDateProchainControle.setToolTipText("Format: JJ/MM/AAAA");
+        txtDateProchainControle.setToolTipText("Format: JJ/MM/AAAA (optionnel)");
         ajouterLigne(mainPanel, gbc, 16, "Date contrôle :", txtDateProchainControle);
 
         txtInstructionsControle = new JTextArea(2, 20);
@@ -192,6 +201,9 @@ public class ConsultationFormFrame extends JDialog {
         add(scroll);
     }
 
+    /**
+     * Ajoute un titre de section avec séparation visuelle.
+     */
     private void ajouterTitreSeparateur(JPanel panel, GridBagConstraints gbc, int ligne, String titre) {
         gbc.gridy = ligne;
         gbc.gridx = 0;
@@ -206,6 +218,9 @@ public class ConsultationFormFrame extends JDialog {
         gbc.insets = new Insets(5, 8, 5, 8);
     }
 
+    /**
+     * Ajoute une ligne avec label et composant.
+     */
     private void ajouterLigne(JPanel panel, GridBagConstraints gbc, int ligne, String labelText, Component comp) {
         gbc.gridy = ligne;
         gbc.gridwidth = 1;
@@ -220,6 +235,9 @@ public class ConsultationFormFrame extends JDialog {
         panel.add(comp, gbc);
     }
 
+    /**
+     * Ajoute une ligne avec label et TextArea scrollable.
+     */
     private void ajouterLigneTextArea(JPanel panel, GridBagConstraints gbc, int ligne, String labelText, JTextArea textArea) {
         gbc.gridy = ligne;
         gbc.gridwidth = 1;
@@ -235,32 +253,45 @@ public class ConsultationFormFrame extends JDialog {
         panel.add(pane, gbc);
     }
 
+    /**
+     * Pré-remplit les champs avec les données de la consultation existante.
+     */
     private void remplirChamps() {
+        if (consultationExistante == null) return;  // ✅ Sécurité
+
         for (int i = 0; i < comboRendezVous.getItemCount(); i++) {
             String item = comboRendezVous.getItemAt(i);
-            if (item.startsWith(consultationExistante.getAppointmentId() + " | ")) {
+            if (item != null && item.startsWith(consultationExistante.getAppointmentId() + " | ")) {
                 comboRendezVous.setSelectedIndex(i);
                 break;
             }
         }
 
-        txtDureeSymptomes.setText(consultationExistante.getDureeSymptomes());
+        txtDureeSymptomes.setText(consultationExistante.getDureeSymptomes() != null ? consultationExistante.getDureeSymptomes() : "");
         spinnerNiveauDouleur.setValue(consultationExistante.getNiveauDouleur());
-        comboStatut.setSelectedItem(consultationExistante.getStatut());
-        txtDiagnostic.setText(consultationExistante.getDiagnostic());
-        txtNotesMedicales.setText(consultationExistante.getNotesMedicales());
-        txtAnalyseDemandee.setText(consultationExistante.getAnalyseDemandee());
-        txtResultatAnalyse.setText(consultationExistante.getResultatAnalyse());
-        txtOrdonnance.setText(consultationExistante.getOrdonnance());
-        txtDosage.setText(consultationExistante.getDosage());
-        txtDureeTraitement.setText(consultationExistante.getDureeTraitement());
+
+        if (consultationExistante.getStatut() != null) {
+            comboStatut.setSelectedItem(consultationExistante.getStatut());
+        }
+
+        txtDiagnostic.setText(consultationExistante.getDiagnostic() != null ? consultationExistante.getDiagnostic() : "");
+        txtNotesMedicales.setText(consultationExistante.getNotesMedicales() != null ? consultationExistante.getNotesMedicales() : "");
+        txtAnalyseDemandee.setText(consultationExistante.getAnalyseDemandee() != null ? consultationExistante.getAnalyseDemandee() : "");
+        txtResultatAnalyse.setText(consultationExistante.getResultatAnalyse() != null ? consultationExistante.getResultatAnalyse() : "");
+        txtOrdonnance.setText(consultationExistante.getOrdonnance() != null ? consultationExistante.getOrdonnance() : "");
+        txtDosage.setText(consultationExistante.getDosage() != null ? consultationExistante.getDosage() : "");
+        txtDureeTraitement.setText(consultationExistante.getDureeTraitement() != null ? consultationExistante.getDureeTraitement() : "");
 
         if (consultationExistante.getDateProchainControle() != null) {
             txtDateProchainControle.setText(consultationExistante.getDateProchainControle().format(formatterDate));
         }
-        txtInstructionsControle.setText(consultationExistante.getInstructionsControle());
+
+        txtInstructionsControle.setText(consultationExistante.getInstructionsControle() != null ? consultationExistante.getInstructionsControle() : "");
     }
 
+    /**
+     * Valide et enregistre la consultation.
+     */
     private void enregistrer() {
         if (comboRendezVous.getSelectedIndex() == 0) {
             afficherErreur("Veuillez sélectionner un rendez-vous lié !");
@@ -273,11 +304,23 @@ public class ConsultationFormFrame extends JDialog {
             return;
         }
 
+        // ✅ Validation niveau douleur
+        int niveauDouleur = (int) spinnerNiveauDouleur.getValue();
+        if (niveauDouleur < 0 || niveauDouleur > 10) {
+            afficherErreur("Le niveau de douleur doit être entre 0 et 10 !");
+            return;
+        }
+
+        // ✅ Validation date contrôle (optionnel)
         LocalDate dateControle = null;
         String dateTxt = txtDateProchainControle.getText().trim();
         if (!dateTxt.isEmpty()) {
             try {
                 dateControle = LocalDate.parse(dateTxt, formatterDate);
+                if (dateControle.isBefore(LocalDate.now())) {
+                    afficherErreur("La date du prochain contrôle ne peut pas être antérieure à aujourd'hui !");
+                    return;
+                }
             } catch (DateTimeParseException e) {
                 afficherErreur("Format de la date de contrôle incorrect ! Utilisez JJ/MM/AAAA");
                 return;
@@ -296,18 +339,18 @@ public class ConsultationFormFrame extends JDialog {
         c.setAppointmentId(appointmentId);
         c.setPatientId(patientId);
         c.setDoctorId(doctorId);
-        c.setDureeSymptomes(txtDureeSymptomes.getText().trim());
-        c.setNiveauDouleur((int) spinnerNiveauDouleur.getValue());
+        c.setDureeSymptomes(txtDureeSymptomes.getText().trim().isEmpty() ? null : txtDureeSymptomes.getText().trim());
+        c.setNiveauDouleur(niveauDouleur);
         c.setStatut((String) comboStatut.getSelectedItem());
         c.setDiagnostic(diagnostic);
-        c.setNotesMedicales(txtNotesMedicales.getText().trim());
-        c.setAnalyseDemandee(txtAnalyseDemandee.getText().trim());
-        c.setResultatAnalyse(txtResultatAnalyse.getText().trim());
-        c.setOrdonnance(txtOrdonnance.getText().trim());
-        c.setDosage(txtDosage.getText().trim());
-        c.setDureeTraitement(txtDureeTraitement.getText().trim());
+        c.setNotesMedicales(txtNotesMedicales.getText().trim().isEmpty() ? null : txtNotesMedicales.getText().trim());
+        c.setAnalyseDemandee(txtAnalyseDemandee.getText().trim().isEmpty() ? null : txtAnalyseDemandee.getText().trim());
+        c.setResultatAnalyse(txtResultatAnalyse.getText().trim().isEmpty() ? null : txtResultatAnalyse.getText().trim());
+        c.setOrdonnance(txtOrdonnance.getText().trim().isEmpty() ? null : txtOrdonnance.getText().trim());
+        c.setDosage(txtDosage.getText().trim().isEmpty() ? null : txtDosage.getText().trim());
+        c.setDureeTraitement(txtDureeTraitement.getText().trim().isEmpty() ? null : txtDureeTraitement.getText().trim());
         c.setDateProchainControle(dateControle);
-        c.setInstructionsControle(txtInstructionsControle.getText().trim());
+        c.setInstructionsControle(txtInstructionsControle.getText().trim().isEmpty() ? null : txtInstructionsControle.getText().trim());
 
         if (consultationExistante == null) {
             c.setDateConsultation(LocalDateTime.now());
@@ -325,6 +368,9 @@ public class ConsultationFormFrame extends JDialog {
         }
     }
 
+    /**
+     * Affiche une boîte d'erreur.
+     */
     private void afficherErreur(String msg) {
         JOptionPane.showMessageDialog(this, msg, "Erreur de validation", JOptionPane.ERROR_MESSAGE);
     }
